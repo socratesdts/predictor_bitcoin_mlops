@@ -1,0 +1,45 @@
+name: CI model to dockerhub
+
+# Trigger
+on:
+  pull_request:
+    branches:
+      - dev
+
+# Actions
+jobs:
+  build_docker_image:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Login to dockerhub
+        uses: docker/login-action@v2
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
+
+      - name: Build docker image
+        run: docker build -t jorzero/deploy_bitcoin_price_prediction_ulead:dev .
+
+      - name: Docker push to Dockerhub
+        run: docker push jorzero/deploy_bitcoin_price_prediction_ulead:dev
+
+# Connection to EC2
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
+            if docker ps --all | grep deploy_bitcoin_price_prediction_ulead; then
+              docker stop deploy_bitcoin_price_prediction_ulead
+              docker rm deploy_bitcoin_price_prediction_ulead
+            fi
+            
+            docker pull ${{ secrets.DOCKER_USERNAME }}/deploy_bitcoin_price_prediction_ulead:dev
+            docker run -d --name deploy_bitcoin_price_prediction_ulead -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/deploy_bitcoin_price_prediction_ulead:dev
