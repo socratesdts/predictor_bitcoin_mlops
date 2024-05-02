@@ -22,10 +22,10 @@ jobs:
           password: ${{secrets.DOCKER_PASSWORD}}
 
       - name: Build docker image
-        run: docker build -t jorzero/deploy_bitcoin_price_prediction_ulead:dev .
+        run: docker build -t asdelgado506/price_predictor_mlops:v1 .
 
       - name: Docker push to Dockerhub
-        run: docker push jorzero/deploy_bitcoin_price_prediction_ulead:dev
+        run: docker push asdelgado506/price_predictor_mlops:v1
 
 # Connection to EC2
       - name: Deploy to EC2
@@ -36,10 +36,10 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}'
-            if docker ps --all | grep deploy_bitcoin_price_prediction_ulead; then
-              docker stop deploy_bitcoin_price_prediction_ulead
-              docker rm deploy_bitcoin_price_prediction_ulead
+            if docker ps --all | grep price_predictor_mlops; then
+              docker stop price_predictor_mlops
+              docker rm price_predictor_mlops
             fi
             
-            docker pull ${{ secrets.DOCKER_USERNAME }}/deploy_bitcoin_price_prediction_ulead:dev
-            docker run -d --name deploy_bitcoin_price_prediction_ulead -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/deploy_bitcoin_price_prediction_ulead:dev
+            docker pull ${{ secrets.DOCKER_USERNAME }}/price_predictor_mlops:v1
+            docker run -d --name price_predictor_mlops -p 8000:8000 ${{ secrets.DOCKER_USERNAME }}/price_predictor_mlops:v1
