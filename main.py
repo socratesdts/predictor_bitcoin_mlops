@@ -4,6 +4,7 @@ from fastapi.params import Query
 from datetime import datetime
 import pandas as pd
 import joblib
+import uvicorn
 
 app = FastAPI(
     title="Bitcoin Price Prediction Model",
@@ -14,7 +15,7 @@ app = FastAPI(
 model = joblib.load("model/saved_btc_model.pkl")
 
 @app.post("/predict-bitcoin-price", status_code=200)
-async def predict_bitcoin_price(prediction_date: str = Query(..., description="Use date formart: MM/DD/YYYY")):
+async def predict_bitcoin_price(prediction_date: str = Query(..., description="Use date format: MM/DD/YYYY")):
     try:
         date_parsed = datetime.strptime(prediction_date, '%m/%d/%Y')
         date_features = pd.DataFrame([[date_parsed.year, date_parsed.month, date_parsed.day]], columns=['Year', 'Month', 'Day'])
@@ -29,4 +30,5 @@ async def predict_bitcoin_price(prediction_date: str = Query(..., description="U
             detail=str(e)
         )
 
-# To run the server, use the command: uvicorn main:app --reload
+if __name__ == "__main__":
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
